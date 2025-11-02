@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palindrome Checker - Multithreading Demo</title>
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to bottom right, #74ebd5, #ACB6E5);
+  margin: 0; padding: 20px;
+}
+h1 { text-align: center; color: #ffffff; }
+.container { display: flex; gap: 20px; flex-wrap: wrap; }
+.left-column, .right-column { display: flex; flex-direction: column; gap: 20px; flex: 1; min-width: 300px; }
+.box { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 20px; }
+button { padding: 8px 16px; border: none; border-radius: 6px; background-color: #5c67f2; color: white; cursor: pointer; margin-top: 5px; }
+button:hover { background-color: #4047c2; }
+input[type="number"] { padding: 6px; width: 120px; border-radius: 6px; border: 1px solid #ccc; margin-right: 8px; }
+#clientArea { display: flex; flex-direction: column; gap: 15px; }
+.client-box { border: 1px solid #5c67f2; padding: 10px; border-radius: 8px; background-color: #f1f2f6; }
+#requestLog { max-height: 500px; overflow-y: auto; font-size: 14px; line-height: 1.6; }
+.log-entry { margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-left: 4px solid #5c67f2; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.processing { font-style: italic; color: #ff6b6b; }
+</style>
+</head>
+<body>
+<h1>Palindrome Checker - True Multithreading Demo</h1>
+<div class="container">
+  <div class="left-column">
+    <div class="box">
+      <button onclick="simulateClient()">Simulate Client</button>
+    </div>
+    <div id="clientArea"></div>
+  </div>
+  <div class="right-column">
+    <div class="box">
+      <h3>Request Log:</h3>
+      <div id="requestLog"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let clientCounter = 0;
+const colors = ["#5c67f2","#ff6b6b","#1dd1a1","#feca57","#54a0ff","#00d2d3","#ff9ff3"];
+
+function simulateClient() {
+  const clientId = clientCounter++;
+  const clientBox = document.createElement("div");
+  clientBox.className = "client-box";
+  clientBox.id = `client-${clientId}`;
+  const color = colors[clientId % colors.length];
+
+  clientBox.innerHTML = `
+    <strong style="color:${color}">Client ${clientId}</strong><br>
+    <input type="number" placeholder="Enter number" id="input-${clientId}">
+    <button onclick="sendRequest(${clientId})">Check Palindrome</button>
+    <div id="clientResult${clientId}"></div>
+  `;
+  document.getElementById("clientArea").prepend(clientBox);
+}
+
+async function sendRequest(clientId) {
+  const inputEl = document.getElementById(`input-${clientId}`);
+  let number = inputEl.value.trim();
+  if(number === "") number = 0; // default 0 if empty
+
+  const resultDiv = document.getElementById(`clientResult${clientId}`);
+  resultDiv.innerHTML = `<span class="processing">Processing...</span>`;
+
+  const start = performance.now();
+  const response = await fetch(`/check-palindrome?clientId=${clientId}&number=${number}`);
+  const result = await response.json();
+  const end = performance.now();
+
+  resultDiv.innerHTML = `<br>Number Entered: <code>${result.number}</code><br>
+    Palindrome: <strong style="color:${result.isPalindrome ? 'green':'red'}">${result.isPalindrome}</strong><br>
+    Thread ID: ${result.threadId}<br>
+    Time Taken (client): ${(end-start).toFixed(2)} ms<br>
+    Time Taken (server): ${result.timeTaken.toFixed(2)} ms
+    <br><small>${new Date().toLocaleTimeString()}</small>`;
+
+  inputEl.value = '';
+}
+</script>
+</body>
+</html>
